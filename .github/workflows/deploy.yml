@@ -64,8 +64,8 @@ jobs:
               for quality in ${{ vars.QUALITIES }}
               do
                 inkscape -w ${quality} -h ${quality} "${itemPath}.svg" -o "${itemPath}.png"
-                aws s3api put-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png" --body "${itemPath}.png"
-              done
+                aws s3api put-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png" --content-type "image/png" --body "${itemPath}.png "
+              done  
             fi
           done
         env:
