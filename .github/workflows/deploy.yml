@@ -18,6 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
+      - name: Download Inkscape
+        run: sudo apt update && sudo apt install inkscape -y
       - name: Clear removed images
         run: |
           if [ -n ${LOG_SOURCE} ]
@@ -61,7 +63,7 @@ jobs:
               itemFilename=$(basename "${itemPath}")
               for quality in ${{ vars.QUALITIES }}
               do
-                convert -size "${quality}x${quality}" "${itemPath}.svg" "${itemPath}.png"
+                inkscape -w ${quality} -h ${quality} "${itemPath}.svg" -o "${itemPath}.png"
                 aws s3api put-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png" --body "${itemPath}.png"
               done
             fi
