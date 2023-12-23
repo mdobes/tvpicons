@@ -8,11 +8,24 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Git checkout
+      - name: Git checkout with complete history
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Git checkout with limited history
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Clear removed images
         run: |
-          DELETED=$(git log --all --name-only --pretty="" --diff-filter=D "${LOG_SOURCE}")
+          if [ -n ${LOG_SOURCE} ]
+          then
+            DELETED=$(git log --all --name-only --pretty="" --diff-filter=D)
+          else
+            DELETED=$(git log --all --name-only --pretty="" --diff-filter=D ${LOG_SOURCE})
+          fi
           for item in $DELETED
           do
             if ! [ -n "${item%%src/*}" ]
@@ -33,7 +46,12 @@ jobs:
           LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
       - name: Convert and push changed images
         run: |
-          MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM "${LOG_SOURCE}")
+          if [ -n ${LOG_SOURCE} ]
+          then
+            MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM)
+          else
+            MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM ${LOG_SOURCE})
+          fi
           for item in $MODIFIED
           do
             if ! [ -n "${item%%src/*}" ]
@@ -42,7 +60,6 @@ jobs:
               itemFilename=$(basename "${itemPath}")
               for quality in ${{ env.QUALITIES }}
               do
-                echo "${quality}x${quality}"
                 convert -size "${quality}x${quality}" "${itemPath}.svg" "${itemPath}.png"
                 aws s3api put-object --bucket "${{ env.AWS_BUCKET }}" --key "${{ env.PREFIX }}/${quality}/${itemFilename}.png" --body "${itemPath}.png"
               done
