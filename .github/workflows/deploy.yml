@@ -1,0 +1,56 @@
+name: Deploy
+concurrency: deploy
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+      - name: Clear removed images
+        run: |
+          DELETED=$(git log --all --name-only --pretty="" --diff-filter=D "${LOG_SOURCE}")
+          for item in $DELETED
+          do
+            if ! [ -n "${item%%src/*}" ]
+            then
+              itemPath="${item%.svg}"
+              itemFilename=$(basename "${itemPath}")
+              for quality in ${{ env.QUALITIES }}
+              do
+                aws s3api delete-object --bucket "${{ env.AWS_BUCKET }}" --key "${{ env.PREFIX }}/${quality}/${itemFilename}.png"
+              done
+            fi
+          done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: ${{ env.AWS_ENDPOINT_URL }}
+          AWS_PAGER: 
+          LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
+      - name: Convert and push changed images
+        run: |
+          MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM "${LOG_SOURCE}")
+          for item in $MODIFIED
+          do
+            if ! [ -n "${item%%src/*}" ]
+            then
+              itemPath="${item%.svg}"
+              itemFilename=$(basename "${itemPath}")
+              for quality in ${{ env.QUALITIES }}
+              do
+                echo "${quality}x${quality}"
+                convert -size "${quality}x${quality}" "${itemPath}.svg" "${itemPath}.png"
+                aws s3api put-object --bucket "${{ env.AWS_BUCKET }}" --key "${{ env.PREFIX }}/${quality}/${itemFilename}.png" --body "${itemPath}.png"
+              done
+            fi
+          done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: ${{ env.AWS_ENDPOINT_URL }}
+          AWS_PAGER: 
+          LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
