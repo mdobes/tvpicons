@@ -43,6 +43,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_ENDPOINT_URL: ${{ vars.AWS_ENDPOINT_URL }}
           AWS_PAGER: 
+          AWS_EC2_METADATA_DISABLED: true
           LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
       - name: Convert and push changed images
         run: |
@@ -70,4 +71,5 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_ENDPOINT_URL: ${{ vars.AWS_ENDPOINT_URL }}
           AWS_PAGER: 
+          AWS_EC2_METADATA_DISABLED: true
           LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
