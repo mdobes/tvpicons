@@ -32,17 +32,18 @@ jobs:
             then
               itemPath="${item%.svg}"
               itemFilename=$(basename "${itemPath}")
-              for quality in ${{ env.QUALITIES }}
+              for quality in ${{ vars.QUALITIES }}
               do
-                aws s3api delete-object --bucket "${{ env.AWS_BUCKET }}" --key "${{ env.PREFIX }}/${quality}/${itemFilename}.png"
+                aws s3api delete-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png"
               done
             fi
           done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_ENDPOINT_URL: ${{ env.AWS_ENDPOINT_URL }}
+          AWS_ENDPOINT_URL: ${{ vars.AWS_ENDPOINT_URL }}
           AWS_PAGER: 
+          AWS_EC2_METADATA_DISABLED: true
           LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
       - name: Convert and push changed images
         run: |
@@ -58,16 +59,17 @@ jobs:
             then
               itemPath="${item%.svg}"
               itemFilename=$(basename "${itemPath}")
-              for quality in ${{ env.QUALITIES }}
+              for quality in ${{ vars.QUALITIES }}
               do
                 convert -size "${quality}x${quality}" "${itemPath}.svg" "${itemPath}.png"
-                aws s3api put-object --bucket "${{ env.AWS_BUCKET }}" --key "${{ env.PREFIX }}/${quality}/${itemFilename}.png" --body "${itemPath}.png"
+                aws s3api put-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png" --body "${itemPath}.png"
               done
             fi
           done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_ENDPOINT_URL: ${{ env.AWS_ENDPOINT_URL }}
+          AWS_ENDPOINT_URL: ${{ vars.AWS_ENDPOINT_URL }}
           AWS_PAGER: 
+          AWS_EC2_METADATA_DISABLED: true
           LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
