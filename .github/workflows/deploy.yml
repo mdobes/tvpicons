@@ -24,7 +24,7 @@ jobs:
         run: |
           if [ -n ${LOG_SOURCE} ]
           then
-            DELETED=$(git log --all --name-only --pretty="" --diff-filter=D)
+            DELETED=$(comm -23 <(git log --all --name-only --pretty="" --diff-filter=D | sort | uniq) <(git ls-files | sort))
           else
             DELETED=$(git log --all --name-only --pretty="" --diff-filter=D ${LOG_SOURCE})
           fi
@@ -51,7 +51,7 @@ jobs:
         run: |
           if [ -n ${LOG_SOURCE} ]
           then
-            MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM)
+            MODIFIED=$(git ls-files "src/*.svg")
           else
             MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM ${LOG_SOURCE})
           fi
