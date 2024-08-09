@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Vrstva_1" data-name="Vrstva 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 1024 1024">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#Nepojmenovaný_přechod_2);
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6 {
+        stroke-width: 0px;
+      }
+
+      .cls-2 {
+        fill: url(#Nepojmenovaný_přechod_4);
+      }
+
+      .cls-3 {
+        fill: url(#Nepojmenovaný_přechod_3);
+      }
+
+      .cls-7 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-4 {
+        fill: none;
+      }
+
+      .cls-5 {
+        fill: #f03b3b;
+      }
+
+      .cls-8 {
+        fill: url(#Nepojmenovaný_přechod_56);
+        stroke: #020202;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-6 {
+        fill: #fff;
+      }
+    </style>
+    <linearGradient id="Nepojmenovaný_přechod_56" data-name="Nepojmenovaný přechod 56" x1="512" y1="1003.3" x2="512" y2="20.1" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#132079"/>
+      <stop offset=".4" stop-color="#1339ca"/>
+      <stop offset=".5" stop-color="#102faa"/>
+      <stop offset=".8" stop-color="#0b165a"/>
+      <stop offset=".8" stop-color="#0b1454"/>
+    </linearGradient>
+    <clipPath id="clippath">
+      <rect class="cls-4" x="345" y="415.2" width="193.7" height="193.5"/>
+    </clipPath>
+    <linearGradient id="Nepojmenovaný_přechod_2" data-name="Nepojmenovaný přechod 2" x1="445.7" y1="520.6" x2="402.3" y2="423.9" gradientTransform="translate(0 1024) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f03c3c"/>
+      <stop offset="1" stop-color="#f03c3c" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="Nepojmenovaný_přechod_3" data-name="Nepojmenovaný přechod 3" x1="470.4" y1="521.1" x2="387" y2="471.1" gradientTransform="translate(0 1024) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f03b3b"/>
+      <stop offset="1" stop-color="#f03b3b" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="Nepojmenovaný_přechod_4" data-name="Nepojmenovaný přechod 4" x1="418.6" y1="495.4" x2="421.9" y2="492.1" gradientTransform="translate(0 1024) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f03b3b" stop-opacity="0"/>
+      <stop offset="1" stop-color="#f03b3b"/>
+    </linearGradient>
+  </defs>
+  <rect class="cls-8" width="1024" height="1024"/>
+  <g>
+    <path class="cls-6" d="M198.2,444.1h34.2v17.9c9.5-12.6,24.5-20.5,42.6-20.5,32.6,0,55,23.7,55,56v82.1h-34.2v-76c0-18.2-13.2-31-31.6-31s-31.8,12.9-31.8,31v76h-34.2v-135.5ZM590.4,579.6h38.4l53.9-135.5h-34.5l-37.6,99.7-37.3-99.7h-36.8l53.9,135.5ZM754.5,550.9c-21,0-36.8-16.8-36.8-39.2s15.8-38.9,36.8-38.9,37.1,16.8,37.1,38.9-16,39.2-37.1,39.2ZM791.6,579.6h34.2v-135.5h-34.2v17.1c-10.8-12.4-25.8-19.7-43.9-19.7-37.1,0-65.5,30.5-65.5,70.2s28.4,70.5,65.5,70.5,33.1-7.4,43.9-19.5v16.8h0Z"/>
+    <g class="cls-7">
+      <g>
+        <path class="cls-1" d="M441.5,608.8c-24.7,0-49.4-9.4-68.1-28.2-37.6-37.6-37.6-98.9,0-136.5,48.6-44.9,104.6-31.3,136.3.3,31.6,31.6,45.2,87.6.6,135.9-19,19-43.9,28.5-68.7,28.5h0ZM389.1,564.9c29,29,76.1,29,105,0,34.5-37.4,24.8-79.6-.3-104.8-25.2-25.1-67.3-34.9-105,0-28.6,28.6-28.6,75.8.3,104.8Z"/>
+        <path class="cls-3" d="M421.9,600.7c-18.4,0-35.6-7.1-48.6-20.2-12.9-12.9-20.2-30.2-20.2-48.6s7.1-35.6,20.2-48.6c26.8-26.8,70.3-26.8,97.2,0,12.9,13,20.1,30.2,20.1,48.6s-7.1,35.6-20.2,48.6c-12.9,12.9-30.2,20.1-48.6,20.1h0ZM421.9,485.6c-11.9,0-23.8,4.5-32.8,13.5-8.7,8.7-13.6,20.4-13.6,32.8s4.8,24.1,13.6,32.8c8.7,8.7,20.4,13.6,32.8,13.6s24.1-4.8,32.8-13.6c8.7-8.8,13.6-20.4,13.6-32.8s-4.8-24.1-13.6-32.8c-9.1-9.1-21-13.5-32.8-13.5Z"/>
+        <path class="cls-2" d="M421.9,600.7c-18.4,0-35.6-7.1-48.6-20.2-12.9-12.9-20.2-30.2-20.2-48.6s7.1-35.6,20.2-48.6c26.8-26.8,70.3-26.8,97.2,0,12.9,13,20.1,30.2,20.1,48.6s-7.1,35.6-20.2,48.6c-12.9,12.9-30.2,20.1-48.6,20.1h0ZM421.9,485.6c-11.9,0-23.8,4.5-32.8,13.5-8.7,8.7-13.6,20.4-13.6,32.8s4.8,24.1,13.6,32.8c8.7,8.7,20.4,13.6,32.8,13.6s24.1-4.8,32.8-13.6c8.7-8.8,13.6-20.4,13.6-32.8s-4.8-24.1-13.6-32.8c-9.1-9.1-21-13.5-32.8-13.5Z"/>
+        <path class="cls-5" d="M373.3,580.6c-18.3-18.3-28.3-42.5-28.3-68.3s10.1-50.1,28.3-68.3l15.7,15.7c-14,14-21.8,32.7-21.8,52.5s7.7,38.5,21.8,52.5l-15.7,15.7h0Z"/>
+      </g>
+    </g>
+  </g>
+</svg>
