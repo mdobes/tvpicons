@@ -45,7 +45,6 @@
       <stop offset=".4" stop-color="#1339ca"/>
       <stop offset=".5" stop-color="#102faa"/>
       <stop offset=".8" stop-color="#0b165a"/>
-      <stop offset=".8" stop-color="#0b1454"/>
     </linearGradient>
     <clipPath id="clippath">
       <rect class="cls-4" x="345" y="415.2" width="193.7" height="193.5"/>
