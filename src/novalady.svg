@@ -3,27 +3,25 @@
   <defs>
     <style>
       .cls-1 {
-        fill: url(#Nepojmenovaný_přechod_15);
-        stroke: #020202;
-        stroke-miterlimit: 10;
+        fill: url(#Nepojmenovaný_přechod_90);
+      }
+
+      .cls-1, .cls-2, .cls-3 {
+        stroke-width: 0px;
       }
 
       .cls-2 {
-        fill: #c13647;
-      }
-
-      .cls-2, .cls-3 {
-        stroke-width: 0px;
+        fill: #f25747;
       }
 
       .cls-3 {
         fill: #fff;
       }
     </style>
-    <linearGradient id="Nepojmenovaný_přechod_15" data-name="Nepojmenovaný přechod 15" x1="512" y1="79.3" x2="512" y2="-903.9" gradientTransform="translate(0 924)" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffd5d6"/>
-      <stop offset=".4" stop-color="#ffafa1"/>
-      <stop offset=".8" stop-color="#ff886f"/>
+    <linearGradient id="Nepojmenovaný_přechod_90" data-name="Nepojmenovaný přechod 90" x1="5976.8" y1="5108.2" x2="5977.8" y2="5108.2" gradientTransform="translate(5705561.8 6676263.6) rotate(-90) scale(1116.9 -1116.9)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffc8cd"/>
+      <stop offset="0" stop-color="#ffc8cd"/>
+      <stop offset="1" stop-color="#ff6964"/>
     </linearGradient>
   </defs>
   <rect class="cls-1" width="1024" height="1024"/>
