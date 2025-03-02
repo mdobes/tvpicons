@@ -34,10 +34,15 @@ jobs:
             then
               itemPath="${item%.svg}"
               itemFilename=$(basename "${itemPath}")
-              for quality in ${{ vars.QUALITIES }}
-              do
-                aws s3api delete-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png"
-              done
+              if [ -f "${itemPath}.svg" ]; then
+                for quality in ${{ vars.QUALITIES }}
+                do
+                  inkscape -w ${quality} -h ${quality} "${itemPath}.svg" -o "${itemPath}.png"
+                  aws s3api put-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png" --content-type "image/png" --body "${itemPath}.png"
+                done  
+              else
+                echo "File ${itemPath}.svg does not exist, skipping..."
+              fi
             fi
           done
         env:
