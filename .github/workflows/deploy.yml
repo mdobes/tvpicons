@@ -22,13 +22,40 @@ jobs:
         run: sudo apt update && sudo apt install inkscape -y
       - name: Clear removed images
         run: |
-          if [ -n ${LOG_SOURCE} ]
+          if [ -n "${LOG_SOURCE}" ]
           then
             DELETED=$(git log --all --name-only --pretty="" --diff-filter=D ${LOG_SOURCE})
           else
             DELETED=$(comm -23 <(git log --all --name-only --pretty="" --diff-filter=D | sort | uniq) <(git ls-files | sort))
           fi
           for item in $DELETED
+          do
+            if ! [ -n "${item%%src/*}" ]
+            then
+              itemPath="${item%.svg}"
+              itemFilename=$(basename "${itemPath}")
+              for quality in ${{ vars.QUALITIES }}
+              do
+                aws s3api delete-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png"
+              done
+            fi
+          done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: ${{ vars.AWS_ENDPOINT_URL }}
+          AWS_PAGER: 
+          AWS_EC2_METADATA_DISABLED: true
+          LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
+      - name: Convert and push changed images
+        run: |
+          if [ -n "${LOG_SOURCE}" ]
+          then
+            MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM ${LOG_SOURCE})
+          else
+            MODIFIED=$(git ls-files "src/*.svg")
+          fi
+          for item in $MODIFIED
           do
             if ! [ -n "${item%%src/*}" ]
             then
@@ -43,34 +70,6 @@ jobs:
               else
                 echo "File ${itemPath}.svg does not exist, skipping..."
               fi
-            fi
-          done
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_ENDPOINT_URL: ${{ vars.AWS_ENDPOINT_URL }}
-          AWS_PAGER: 
-          AWS_EC2_METADATA_DISABLED: true
-          LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
-      - name: Convert and push changed images
-        run: |
-          if [ -n ${LOG_SOURCE} ]
-          then
-            MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM ${LOG_SOURCE})
-          else
-            MODIFIED=$(git ls-files "src/*.svg")
-          fi
-          for item in $MODIFIED
-          do
-            if ! [ -n "${item%%src/*}" ]
-            then
-              itemPath="${item%.svg}"
-              itemFilename=$(basename "${itemPath}")
-              for quality in ${{ vars.QUALITIES }}
-              do
-                inkscape -w ${quality} -h ${quality} "${itemPath}.svg" -o "${itemPath}.png"
-                aws s3api put-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png" --content-type "image/png" --body "${itemPath}.png"
-              done  
             fi
           done
         env:
