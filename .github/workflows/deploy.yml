@@ -37,6 +37,8 @@ jobs:
               for quality in ${{ vars.QUALITIES }}
               do
                 aws s3api delete-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png"
+                # Record URL for Cloudflare purge
+                echo "${{ vars.CDN_BASE_URL }}/${{ vars.PREFIX }}/${quality}/${itemFilename}.png" >> purge_urls.txt
               done
             fi
           done
@@ -66,6 +68,8 @@ jobs:
                 do
                   inkscape -w ${quality} -h ${quality} "${itemPath}.svg" -o "${itemPath}.png"
                   aws s3api put-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png" --content-type "image/png" --body "${itemPath}.png"
+                  # Record URL for Cloudflare purge
+                  echo "${{ vars.CDN_BASE_URL }}/${{ vars.PREFIX }}/${quality}/${itemFilename}.png" >> purge_urls.txt
                 done  
               else
                 echo "File ${itemPath}.svg does not exist, skipping..."
@@ -79,3 +83,29 @@ jobs:
           AWS_PAGER: 
           AWS_EC2_METADATA_DISABLED: true
           LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
+      - name: Purge Cloudflare cache
+        if: hashFiles('purge_urls.txt') != ''
+        run: |
+          if [ -f purge_urls.txt ]; then
+            # Create JSON payload for Cloudflare API
+            URLS=$(cat purge_urls.txt | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            
+            # Split URLs into chunks of 30 (Cloudflare API limit)
+            echo "$URLS" | jq -c '.[]' | split -l 30 - urls_chunk_
+            
+            # Perform purge for each chunk
+            for chunk_file in urls_chunk_*; do
+              CHUNK_URLS=$(cat "$chunk_file" | jq -s -c '.')
+              echo "Purging $(echo "$CHUNK_URLS" | jq 'length') URLs from Cloudflare cache..."
+              
+              curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ vars.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+                -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                --data "{\"files\":$CHUNK_URLS}" \
+                --fail-with-body
+            done
+            
+            echo "Cloudflare cache purge completed for $(cat purge_urls.txt | wc -l) URLs"
+          else
+            echo "No URLs to purge"
+          fi
