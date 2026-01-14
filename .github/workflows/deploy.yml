@@ -1,111 +1,253 @@
 name: Deploy
 concurrency: deploy
+
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_ENDPOINT_URL: ${{ vars.AWS_ENDPOINT_URL }}
+  AWS_PAGER: ""
+  AWS_EC2_METADATA_DISABLED: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Git checkout with complete history
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Git checkout with limited history
-        if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - name: Download Inkscape
-        run: sudo apt update && sudo apt install inkscape -y
-      - name: Clear removed images
+          fetch-depth: ${{ github.event_name == 'workflow_dispatch' && 0 || 2 }}
+
+      - name: Detect changed files
+        id: detect-changes
         run: |
-          if [ -n "${LOG_SOURCE}" ]
-          then
+          LOG_SOURCE="${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}"
+          
+          if [ -n "${LOG_SOURCE}" ]; then
+            MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM ${LOG_SOURCE} | grep "^src/.*\.svg$" || true)
+          else
+            MODIFIED=$(git ls-files "src/*.svg")
+          fi
+          
+          if [ -n "$MODIFIED" ]; then
+            echo "has-modified=true" >> $GITHUB_OUTPUT
+            echo "Found modified SVG files - Inkscape will be installed"
+          else
+            echo "has-modified=false" >> $GITHUB_OUTPUT
+            echo "No modified SVG files - skipping Inkscape installation"
+          fi
+
+      - name: Cache Inkscape
+        if: steps.detect-changes.outputs.has-modified == 'true'
+        uses: actions/cache@v4
+        id: cache-inkscape
+        with:
+          path: /usr/bin/inkscape
+          key: inkscape-${{ runner.os }}-v1
+
+      - name: Install Inkscape
+        if: steps.detect-changes.outputs.has-modified == 'true' && steps.cache-inkscape.outputs.cache-hit != 'true'
+        run: sudo apt update && sudo apt install inkscape -y
+
+      - name: Initialize counters
+        run: |
+          echo "0" > deleted_count.txt
+          echo "0" > uploaded_count.txt
+          echo "0" > failed_count.txt
+
+      - name: Clear removed images
+        continue-on-error: true
+        run: |
+          LOG_SOURCE="${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}"
+          
+          if [ -n "${LOG_SOURCE}" ]; then
             DELETED=$(git log --all --name-only --pretty="" --diff-filter=D ${LOG_SOURCE})
           else
             DELETED=$(comm -23 <(git log --all --name-only --pretty="" --diff-filter=D | sort | uniq) <(git ls-files | sort))
           fi
-          for item in $DELETED
-          do
-            if ! [ -n "${item%%src/*}" ]
-            then
+          
+          DELETED_COUNT=0
+          for item in $DELETED; do
+            if ! [ -n "${item%%src/*}" ]; then
               itemPath="${item%.svg}"
               itemFilename=$(basename "${itemPath}")
-              for quality in ${{ vars.QUALITIES }}
-              do
-                aws s3api delete-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png"
-                # Record URL for Cloudflare purge
-                echo "${{ vars.CDN_BASE_URL }}/${{ vars.PREFIX }}/${quality}/${itemFilename}.png" >> purge_urls.txt
+              
+              for quality in ${{ vars.QUALITIES }}; do
+                KEY="${{ vars.PREFIX }}/${quality}/${itemFilename}.png"
+                
+                # Delete with retry logic
+                RETRIES=3
+                for i in $(seq 1 $RETRIES); do
+                  if aws s3api delete-object --bucket "${{ vars.AWS_BUCKET }}" --key "${KEY}"; then
+                    echo "✓ Deleted: ${KEY}"
+                    echo "${{ vars.CDN_BASE_URL }}/${KEY}" >> purge_urls.txt
+                    DELETED_COUNT=$((DELETED_COUNT + 1))
+                    break
+                  else
+                    echo "⚠ Retry $i/$RETRIES for: ${KEY}"
+                    sleep 2
+                  fi
+                done
               done
             fi
           done
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_ENDPOINT_URL: ${{ vars.AWS_ENDPOINT_URL }}
-          AWS_PAGER: 
-          AWS_EC2_METADATA_DISABLED: true
-          LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
-      - name: Convert and push changed images
+          
+          echo "${DELETED_COUNT}" > deleted_count.txt
+          echo "Deleted ${DELETED_COUNT} files from S3"
+
+      - name: Convert and upload changed images
+        continue-on-error: true
         run: |
-          if [ -n "${LOG_SOURCE}" ]
-          then
+          LOG_SOURCE="${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}"
+          
+          if [ -n "${LOG_SOURCE}" ]; then
             MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM ${LOG_SOURCE})
           else
             MODIFIED=$(git ls-files "src/*.svg")
           fi
-          for item in $MODIFIED
-          do
-            if ! [ -n "${item%%src/*}" ]
-            then
+          
+          UPLOADED_COUNT=0
+          FAILED_COUNT=0
+          
+          for item in $MODIFIED; do
+            if ! [ -n "${item%%src/*}" ]; then
               itemPath="${item%.svg}"
               itemFilename=$(basename "${itemPath}")
+              
               if [ -f "${itemPath}.svg" ]; then
-                for quality in ${{ vars.QUALITIES }}
-                do
-                  inkscape -w ${quality} -h ${quality} "${itemPath}.svg" -o "${itemPath}.png"
-                  aws s3api put-object --bucket "${{ vars.AWS_BUCKET }}" --key "${{ vars.PREFIX }}/${quality}/${itemFilename}.png" --content-type "image/png" --body "${itemPath}.png"
-                  # Record URL for Cloudflare purge
-                  echo "${{ vars.CDN_BASE_URL }}/${{ vars.PREFIX }}/${quality}/${itemFilename}.png" >> purge_urls.txt
-                done  
+                for quality in ${{ vars.QUALITIES }}; do
+                  KEY="${{ vars.PREFIX }}/${quality}/${itemFilename}.png"
+                  
+                  # Convert SVG to PNG
+                  if inkscape -w ${quality} -h ${quality} "${itemPath}.svg" -o "${itemPath}.png" 2>/dev/null; then
+                    # Upload with retry logic
+                    RETRIES=3
+                    UPLOADED=false
+                    
+                    for i in $(seq 1 $RETRIES); do
+                      if aws s3api put-object \
+                        --bucket "${{ vars.AWS_BUCKET }}" \
+                        --key "${KEY}" \
+                        --content-type "image/png" \
+                        --body "${itemPath}.png" >/dev/null 2>&1; then
+                        
+                        echo "✓ Uploaded: ${KEY}"
+                        echo "${{ vars.CDN_BASE_URL }}/${KEY}" >> purge_urls.txt
+                        UPLOADED_COUNT=$((UPLOADED_COUNT + 1))
+                        UPLOADED=true
+                        break
+                      else
+                        echo "⚠ Upload retry $i/$RETRIES for: ${KEY}"
+                        sleep 2
+                      fi
+                    done
+                    
+                    if [ "$UPLOADED" = false ]; then
+                      echo "✗ Failed to upload: ${KEY}"
+                      FAILED_COUNT=$((FAILED_COUNT + 1))
+                    fi
+                    
+                    rm -f "${PNG_FILE}"
+                  else
+                    echo "✗ Failed to convert: ${itemPath}.svg (quality: ${quality})"
+                    FAILED_COUNT=$((FAILED_COUNT + 1))
+                  fi
+                done
               else
-                echo "File ${itemPath}.svg does not exist, skipping..."
+                echo "⚠ File ${itemPath}.svg does not exist, skipping..."
               fi
             fi
           done
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_ENDPOINT_URL: ${{ vars.AWS_ENDPOINT_URL }}
-          AWS_PAGER: 
-          AWS_EC2_METADATA_DISABLED: true
-          LOG_SOURCE: ${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}
+          
+          echo "${UPLOADED_COUNT}" > uploaded_count.txt
+          echo "${FAILED_COUNT}" > failed_count.txt
+          echo "Uploaded ${UPLOADED_COUNT} files, ${FAILED_COUNT} failed"
+
       - name: Purge Cloudflare cache
         if: hashFiles('purge_urls.txt') != ''
         run: |
-          if [ -f purge_urls.txt ]; then
-            # Create JSON payload for Cloudflare API
-            URLS=$(cat purge_urls.txt | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          if [ ! -f purge_urls.txt ]; then
+            echo "No URLs to purge"
+            exit 0
+          fi
+          
+          # Remove duplicates and create JSON array
+          URLS=$(sort -u purge_urls.txt | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          TOTAL_URLS=$(echo "$URLS" | jq 'length')
+          
+          echo "Purging ${TOTAL_URLS} unique URLs from Cloudflare cache..."
+          
+          # Split into chunks of 30 (Cloudflare API limit)
+          echo "$URLS" | jq -c '_nwise(30)' > chunks.json
+          CHUNK_COUNT=$(cat chunks.json | wc -l)
+          
+          echo "Processing ${CHUNK_COUNT} chunk(s)..."
+          
+          PURGED=0
+          CHUNK_NUM=0
+          
+          while IFS= read -r CHUNK_URLS; do
+            CHUNK_NUM=$((CHUNK_NUM + 1))
+            CHUNK_SIZE=$(echo "$CHUNK_URLS" | jq 'length')
             
-            # Split URLs into chunks of 30 (Cloudflare API limit)
-            echo "$URLS" | jq -c '.[]' | split -l 30 - urls_chunk_
+            echo "Purging chunk ${CHUNK_NUM}/${CHUNK_COUNT} (${CHUNK_SIZE} URLs)..."
             
-            # Perform purge for each chunk
-            for chunk_file in urls_chunk_*; do
-              CHUNK_URLS=$(cat "$chunk_file" | jq -s -c '.')
-              echo "Purging $(echo "$CHUNK_URLS" | jq 'length') URLs from Cloudflare cache..."
-              
-              curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ vars.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            # Retry logic for Cloudflare API
+            RETRIES=3
+            for i in $(seq 1 $RETRIES); do
+              RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+                "https://api.cloudflare.com/client/v4/zones/${{ vars.CLOUDFLARE_ZONE_ID }}/purge_cache" \
                 -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
                 -H "Content-Type: application/json" \
-                --data "{\"files\":$CHUNK_URLS}" \
-                --fail-with-body
+                --data "{\"files\":$CHUNK_URLS}")
+              
+              HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+              BODY=$(echo "$RESPONSE" | sed '$d')
+              
+              if [ "$HTTP_CODE" = "200" ]; then
+                SUCCESS=$(echo "$BODY" | jq -r '.success')
+                if [ "$SUCCESS" = "true" ]; then
+                  echo "✓ Chunk ${CHUNK_NUM} purged successfully"
+                  PURGED=$((PURGED + CHUNK_SIZE))
+                  break
+                fi
+              fi
+              
+              echo "⚠ Purge retry $i/$RETRIES for chunk ${CHUNK_NUM} (HTTP ${HTTP_CODE})"
+              sleep 2
             done
-            
-            echo "Cloudflare cache purge completed for $(cat purge_urls.txt | wc -l) URLs"
+          done < chunks.json
+          
+          echo "Cloudflare cache purge completed: ${PURGED}/${TOTAL_URLS} URLs purged"
+        env:
+          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Generate job summary
+        if: always()
+        run: |
+          DELETED=$(cat deleted_count.txt 2>/dev/null || echo "0")
+          UPLOADED=$(cat uploaded_count.txt 2>/dev/null || echo "0")
+          FAILED=$(cat failed_count.txt 2>/dev/null || echo "0")
+          PURGED=$([ -f purge_urls.txt ] && sort -u purge_urls.txt | wc -l || echo "0")
+          
+          echo "## 📊 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🗑️ Files deleted | ${DELETED} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⬆️ Files uploaded | ${UPLOADED} |" >> $GITHUB_STEP_SUMMARY
+          echo "| ❌ Failed operations | ${FAILED} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔄 Cache URLs purged | ${PURGED} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${FAILED}" -gt 0 ]; then
+            echo "⚠️ **Warning:** Some operations failed. Please check the logs." >> $GITHUB_STEP_SUMMARY
+            exit 1
           else
-            echo "No URLs to purge"
+            echo "✅ **All operations completed successfully!**" >> $GITHUB_STEP_SUMMARY
           fi
