@@ -20,15 +20,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ github.event_name == 'workflow_dispatch' && 0 || 2 }}
+          fetch-depth: 0
+
+      - name: Determine diff range
+        id: diff-range
+        run: |
+          BEFORE="${{ github.event.before }}"
+          if [ "${{ github.event_name }}" = "push" ] && [ "${BEFORE}" != "0000000000000000000000000000000000000000" ]; then
+            echo "range=${BEFORE}..HEAD" >> $GITHUB_OUTPUT
+          else
+            echo "range=" >> $GITHUB_OUTPUT
+          fi
 
       - name: Detect changed files
         id: detect-changes
         run: |
-          LOG_SOURCE="${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}"
+          RANGE="${{ steps.diff-range.outputs.range }}"
           
-          if [ -n "${LOG_SOURCE}" ]; then
-            MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM ${LOG_SOURCE} | grep "^src/.*\.svg$" || true)
+          if [ -n "${RANGE}" ]; then
+            MODIFIED=$(git log --name-only --pretty="" --diff-filter=AM ${RANGE} | grep "^src/.*\.svg$" || true)
           else
             MODIFIED=$(git ls-files "src/*.svg")
           fi
@@ -62,10 +72,10 @@ jobs:
       - name: Clear removed images
         continue-on-error: true
         run: |
-          LOG_SOURCE="${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}"
+          RANGE="${{ steps.diff-range.outputs.range }}"
           
-          if [ -n "${LOG_SOURCE}" ]; then
-            DELETED=$(git log --all --name-only --pretty="" --diff-filter=D ${LOG_SOURCE})
+          if [ -n "${RANGE}" ]; then
+            DELETED=$(git log --name-only --pretty="" --diff-filter=D ${RANGE})
           else
             DELETED=$(comm -23 <(git log --all --name-only --pretty="" --diff-filter=D | sort | uniq) <(git ls-files | sort))
           fi
@@ -102,10 +112,10 @@ jobs:
       - name: Convert and upload changed images
         continue-on-error: true
         run: |
-          LOG_SOURCE="${{ github.event_name == 'push' && 'HEAD~1..HEAD' || '' }}"
+          RANGE="${{ steps.diff-range.outputs.range }}"
           
-          if [ -n "${LOG_SOURCE}" ]; then
-            MODIFIED=$(git log --all --name-only --pretty="" --diff-filter=AM ${LOG_SOURCE})
+          if [ -n "${RANGE}" ]; then
+            MODIFIED=$(git log --name-only --pretty="" --diff-filter=AM ${RANGE})
           else
             MODIFIED=$(git ls-files "src/*.svg")
           fi
