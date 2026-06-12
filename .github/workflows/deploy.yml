@@ -12,6 +12,8 @@ env:
   AWS_ENDPOINT_URL: ${{ vars.AWS_ENDPOINT_URL }}
   AWS_PAGER: ""
   AWS_EC2_METADATA_DISABLED: true
+  WEBHOOK_URL: https://picons.dobes.dev/webhook.php
+  WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
 
 jobs:
   deploy:
@@ -21,6 +23,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Trigger picons webhook
+        continue-on-error: true
+        run: |
+          curl -fsS -X POST "${WEBHOOK_URL}" \
+            -H "X-Webhook-Secret: ${WEBHOOK_SECRET}"
 
       - name: Determine diff range
         id: diff-range
