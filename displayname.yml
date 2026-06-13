@@ -11,7 +11,7 @@
 -arenasport1: Arena Sport 1
 -arenasport2: Arena Sport 2
 -arte: ARTE
--automotorsport: Auto Motor Sport Channel
+-automotorsport: Auto Motor Sport
 -axn: AXN
 -axnblack: AXN Black
 -axnwhite: AXN White
@@ -46,7 +46,7 @@
 -cnbc: CNBC
 -cnn: CNN
 -cnnprimanews: CNN Prima News
--crimeandinvestigation: Crime + Investigation
+-crimeandinvestigation: Crime+Investigation
 -csfilm: CS Film
 -csfilmcshorror: CS Film / CS Horror
 -cshistory: CS History
@@ -183,7 +183,6 @@
 -musicboxdance: Music Box Dance
 -musicboxhits: Music Box Hits
 -musicboxsexy: Music Box Sexy
--nasatv: NASA TV
 -natgeowild: Nat Geo Wild
 -nationalgeographic: National Geographic
 -nauticalchannel: Nautical Channel
@@ -227,7 +226,7 @@
 -polsat1: Polsat 1
 -polsat2: Polsat 2
 -polsatcafe: Polsat Cafe
--polsatcrimeandinvestigation: Polsat Crime + Investigation
+-polsatcrimeandinvestigation: Polsat Crime+Investigation
 -polsatdoku: Polsat Doku
 -polsatfilm: Polsat Film
 -polsatfilm2: Polsat Film 2
@@ -288,7 +287,7 @@
 -retromusictv: Retro Music Television
 -rtl: RTL
 -rtlzwei: RTL Zwei
--rtustecko: Regionální televize Ústecko
+-rtustecko: RT Ústecko
 -seznamcz: Televize Seznam
 -skvele: SKVELÉ
 -skynews: Sky News
@@ -323,11 +322,10 @@
 -tntsports5: TNT Sports 5
 -tntsportsultimate: TNT Sports Ultimate
 -travelchannel: Travel Channel
--travelxp: Travelxp
--travelxp4k: Travelxp 4K
+-travelxp: TravelXP
+-travelxp4k: TravelXP 4K
 -ttv: TTV
 -turbotv: Turbo TV
--tv1000russkoekino: TV1000 Russkoe Kino
 -tv4: TV4
 -tv5monde: TV5Monde
 -tv6: TV6
@@ -367,3 +365,32 @@
 -wdrfernsehen: WDR Fernsehen
 -zaktv: ZAK TV
 -zdf: ZDF
+-5kanal: 5 канал
+-cctv4: CCTV 4
+-cgtndocumentary: CGTN Documentary
+-csrtv: Československá regionální TV
+-currenttime: Current Time TV
+-filmpro: FilmPRO
+-filmua-drama: FilmUA Drama
+-folklorika: Folklorika
+-ictv: ICTV
+-ictv2: ICTV 2
+-ivysocina: iVysočina
+-jc1: JČ 1
+-kitchentv: Kitchen TV
+-kladno1: Kladno.1 TV
+-langlab: LangLab
+-lovenature4k: Love Nature 4K
+-newsmax: Nesmax
+-nhkworldjapan: NHK World Japan
+-novyikanal: Новий Канал
+-pianko: TV Pianko
+-puls2: Puls 2
+-starcinema: Star Cinema
+-tagesschau24: tagesschau24
+-tvbeskyd: TV Beskyd
+-tvp1: TVP 1
+-tvpinfo: TVP Info
+-tvr: TVR
+-tvt: TVT
+-vijutv1000russkoe: Viju TV 1000 Русское
