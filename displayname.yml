@@ -8,8 +8,6 @@
 -animalplanet: Animal Planet
 -ard1: ARD 1
 -ardalpha: ARD Alpha
--arenasport1: Arena Sport 1
--arenasport2: Arena Sport 2
 -arte: ARTE
 -automotorsport: Auto Motor Sport
 -axn: AXN
@@ -150,7 +148,7 @@
 -jojsport: JOJ Šport
 -jojsport2: JOJ Šport 2
 -jojsvet: JOJ Svet
--jojsvet-cz: JOJ Svet CZ
+-jojsvet-cz: JOJ Svět CZ
 -jtv: JTV
 -kanal1: Kanal1
 -kbsworld: KBS World
@@ -408,3 +406,5 @@
 -novasport3sk: Nova Sport 3 SK
 -novasport4sk: Nova Sport 4 SK
 -novasport5sk: Nova Sport 5 SK
+-kanal1sport: Kanal 1 Sport
+-kanal1xtra: Kanal 1 Xtra
